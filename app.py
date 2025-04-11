@@ -488,4 +488,4 @@ def clear_downloads():
 if __name__ == "__main__":
     print(f"Download folder: {DOWNLOAD_FOLDER}")
     # Use host='0.0.0.0' to make it accessible on your network
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=True, host="0.0.0.0", port=5003)
