@@ -2,3 +2,4 @@ Flask
 pytubefix
 google-api-python-client
 python-dotenv
+flask-cors
