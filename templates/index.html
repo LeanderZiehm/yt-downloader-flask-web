@@ -5,66 +5,143 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YouTube Video Downloader</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .container {
-            background-color: 
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .input-group {
-            margin-bottom: 20px;
-        }
-        input[type="text"] {
-            width: 70%;
-            padding: 10px;
-            border: 1px solid 
-            border-radius: 4px;
-        }
-        button {
-            padding: 10px 15px;
-            background-color: 
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: 
-        }
-        .progress-container {
-            margin-top: 20px;
-            display: none;
-        }
-        .progress-bar {
-            height: 20px;
-            background-color: 
-            border-radius: 10px;
-            margin-bottom: 10px;
-            overflow: hidden;
-        }
-        .progress {
-            height: 100%;
-            background-color: 
-            width: 0%;
-            transition: width 0.3s;
-        }
-        .download-link {
-            display: none;
-            margin-top: 10px;
-        }
-        .error {
-            color: red;
-            margin-top: 10px;
-            display: none;
-        }
-    </style>
+ <style>
+    :root {
+        --bg-color: #0d1117;
+        --container-bg: #161b22;
+        --text-color: #c9d1d9;
+        --accent-color: #238636;
+        --error-color: #f85149;
+        --border-color: #30363d;
+        --button-hover: #2ea043;
+    }
+
+    body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .container {
+        background-color: var(--container-bg);
+        border-radius: 8px;
+        padding: 20px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    .input-group {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+    }
+
+    input[type="text"] {
+        flex: 1;
+        padding: 10px;
+        background-color: #0d1117;
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+        border-radius: 4px;
+    }
+
+    button {
+        padding: 10px 15px;
+        background-color: var(--accent-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background-color 0.2s;
+    }
+
+    button:hover {
+        background-color: var(--button-hover);
+    }
+
+    .progress-container {
+        margin-top: 20px;
+        display: none;
+    }
+
+    .progress-bar {
+        height: 20px;
+        background-color: var(--border-color);
+        border-radius: 10px;
+        margin-bottom: 10px;
+        overflow: hidden;
+    }
+
+    .progress {
+        height: 100%;
+        background-color: var(--accent-color);
+        width: 0%;
+        transition: width 0.3s ease-in-out;
+    }
+
+    .progess-slider {
+        height: 6px;
+        background-color: var(--border-color);
+        border-radius: 4px;
+        margin-bottom: 10px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .progess-slider::after {
+        content: '';
+        position: absolute;
+        height: 100%;
+        width: 0%;
+        background-color: var(--accent-color);
+        transition: width 0.3s ease-in-out;
+    }
+
+    .thumbnail-container img {
+        max-width: 100%;
+        margin: 10px 0;
+        border-radius: 4px;
+    }
+
+    .download-link {
+        display: none;
+        margin-top: 10px;
+        padding: 10px;
+        background-color: var(--accent-color);
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        display: inline-block;
+    }
+
+    .error {
+        color: var(--error-color);
+        margin-top: 10px;
+        display: none;
+    }
+
+    .progess-slider {
+    position: relative;
+    height: 6px;
+    background-color: var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.slider-fill {
+    height: 100%;
+    width: 0%;
+    background-color: var(--accent-color);
+    transition: width 0.3s ease-in-out;
+}
+
+</style>
+
 </head>
 <body>
     <div class="container">
@@ -80,7 +157,9 @@
             <div class="progress-bar">
                 <div class="progress" id="progress-bar"></div>
             </div>
-            <div class="progess-slider"></div>
+            <div class="progess-slider">
+             <div class="slider-fill"></div>
+            </div>
             <p id="progress-text">0%</p>
             <p id="file-size"></p>
             <a href="#" class="download-link" id="download-link">Download Video</a>
@@ -100,6 +179,14 @@
             const fileSize = document.getElementById('file-size');
             const downloadLink = document.getElementById('download-link');
             const errorMessage = document.getElementById('error-message');
+
+            const slider = document.querySelector('.progess-slider::after');
+            const sliderWrapper = document.querySelector('.progess-slider');
+            const progressSlider = sliderWrapper.querySelector('::after'); // won't work like this directly, so:
+            const sliderBar = document.querySelector('.progess-slider');
+
+    
+
             
             let downloadInterval;
             let currentDownloadId;
@@ -168,6 +255,12 @@
                         const percentage = data.percentage;
                         progressBar.style.width = `${percentage}%`;
                         progressText.textContent = `${percentage}%`;
+
+                        const sliderFill = document.querySelector('.slider-fill');
+                        if (sliderFill) {
+                            sliderFill.style.width = `${percentage}%`;
+                        }
+
                         
                         // Update video title if available
                         if (data.title) {
