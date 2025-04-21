@@ -4,7 +4,9 @@ import threading
 import uuid
 import os
 import time
+import json
 from flask_cors import CORS
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -20,6 +22,40 @@ def get_download_path():
     return download_dir
 
 
+def get_history_file_path():
+    """Get the path to the download history JSON file"""
+    return os.path.join(os.getcwd(), "download_history.json")
+
+
+def load_download_history():
+    """Load the download history from the JSON file"""
+    history_path = get_history_file_path()
+    if os.path.exists(history_path):
+        try:
+            with open(history_path, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading download history: {e}")
+            return []
+    return []
+
+
+def save_to_download_history(download_data):
+    """Save download metadata to the history file"""
+    history_path = get_history_file_path()
+    history = load_download_history()
+
+    # Add the new download to the history
+    history.append(download_data)
+
+    # Save back to the file
+    try:
+        with open(history_path, "w") as f:
+            json.dump(history, f, indent=2)
+    except Exception as e:
+        print(f"Error saving download history: {e}")
+
+
 @app.route("/")
 def index():
     """Serve the main page"""
@@ -29,7 +65,10 @@ def index():
 def download_video(url, download_id):
     """Function to download YouTube video in a separate thread"""
     try:
-
+        # Record start time
+        start_time = datetime.now().isoformat()
+        download_tasks[download_id]["started_at"] = time.time()
+        download_tasks[download_id]["start_time_iso"] = start_time
         download_tasks[download_id]["status"] = "downloading"
 
         yt = YouTube(url)
@@ -49,19 +88,45 @@ def download_video(url, download_id):
 
         download_tasks[download_id]["total_size"] = video.filesize
         download_tasks[download_id]["title"] = yt.title
-        url = yt.thumbnail_url
-        print(url)
-        download_tasks[download_id]["thumbnail_url"] = url
+        thumbnail_url = yt.thumbnail_url
+        print(thumbnail_url)
+        download_tasks[download_id]["thumbnail_url"] = thumbnail_url
 
         output_path = get_download_path()
         filename = video.download(output_path=output_path)
+        filename_only = os.path.basename(filename)
+
+        # Record end time
+        end_time = datetime.now().isoformat()
 
         download_tasks[download_id]["status"] = "completed"
         download_tasks[download_id]["percentage"] = 100
         download_tasks[download_id]["file_path"] = filename
+        download_tasks[download_id]["filename"] = filename_only
+        download_tasks[download_id]["end_time_iso"] = end_time
+
+        # Get video length from YouTube metadata instead of using MoviePy
+        length_seconds = yt.length  # This is provided by PyTubefix
+        download_tasks[download_id]["duration_seconds"] = length_seconds
+
+        # Save download metadata to history
+        history_entry = {
+            "download_id": download_id,
+            "url": url,
+            "title": yt.title,
+            "thumbnail_url": thumbnail_url,
+            "filename": filename_only,
+            "file_path": filename,
+            "filesize": video.filesize,
+            "start_time": start_time,
+            "end_time": end_time,
+            "duration_seconds": length_seconds,
+            "video_id": yt.video_id,
+        }
+
+        save_to_download_history(history_entry)
 
     except Exception as e:
-
         download_tasks[download_id]["status"] = "error"
         download_tasks[download_id]["error"] = str(e)
         print(f"Error downloading video: {e}")
@@ -120,6 +185,22 @@ def get_file(download_id):
     return send_file(file_path, as_attachment=True)
 
 
+@app.route("/get_file_by_name/<filename>", methods=["GET"])
+def get_file_by_name(filename):
+    """Endpoint to download a file by its filename"""
+    download_dir = get_download_path()
+    file_path = os.path.join(download_dir, filename)
+
+    # Prevent directory traversal
+    if not os.path.abspath(file_path).startswith(os.path.abspath(download_dir)):
+        return jsonify({"error": "Invalid filename"}), 400
+
+    if not os.path.exists(file_path):
+        return jsonify({"error": "File not found"}), 404
+
+    return send_file(file_path, as_attachment=True)
+
+
 @app.route("/cleanup_old_tasks", methods=["POST"])
 def cleanup_old_tasks():
     """Endpoint to clean up old completed tasks"""
@@ -127,7 +208,6 @@ def cleanup_old_tasks():
     tasks_to_remove = []
 
     for task_id, task_info in download_tasks.items():
-
         if current_time - task_info.get("started_at", current_time) > 3600:
             tasks_to_remove.append(task_id)
 
@@ -137,6 +217,74 @@ def cleanup_old_tasks():
     return jsonify({"removed_tasks": len(tasks_to_remove)})
 
 
-if __name__ == "__main__":
+@app.route("/history", methods=["GET"])
+def download_history():
+    """
+    Return the download history from the JSON file
+    """
+    history = load_download_history()
 
+    # Sort by end time (newest first)
+    history.sort(key=lambda x: x.get("end_time", ""), reverse=True)
+
+    return jsonify(history)
+
+
+@app.route("/file_status", methods=["GET"])
+def check_file_status():
+    """
+    Check if files in the history still exist in the filesystem
+    """
+    history = load_download_history()
+    download_dir = get_download_path()
+
+    for entry in history:
+        filename = entry.get("filename")
+        if filename:
+            file_path = os.path.join(download_dir, filename)
+            entry["file_exists"] = os.path.exists(file_path)
+        else:
+            entry["file_exists"] = False
+
+    return jsonify(history)
+
+
+@app.route("/delete_file", methods=["POST"])
+def delete_file():
+    """
+    Delete a given file from the downloads folder and remove from history.
+    JSON body: { "filename": "<name of file to delete>" }
+    """
+    data = request.get_json()
+    fname = data.get("filename")
+    if not fname:
+        return jsonify({"error": "filename is required"}), 400
+
+    download_dir = get_download_path()
+    safe_path = os.path.abspath(os.path.join(download_dir, fname))
+    # Prevent path traversal
+    if not safe_path.startswith(os.path.abspath(download_dir) + os.sep):
+        return jsonify({"error": "invalid filename"}), 400
+
+    if not os.path.exists(safe_path):
+        return jsonify({"error": "file not found"}), 404
+
+    try:
+        # Delete the file
+        os.remove(safe_path)
+
+        # Remove entry from history
+        history = load_download_history()
+        history = [entry for entry in history if entry.get("filename") != fname]
+
+        # Save updated history
+        with open(get_history_file_path(), "w") as f:
+            json.dump(history, f, indent=2)
+
+        return jsonify({"deleted": fname}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+if __name__ == "__main__":
     app.run(debug=True)
