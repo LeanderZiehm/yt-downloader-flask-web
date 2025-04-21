@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YouTube Video Downloader</title>
+    
+    <link rel="icon" href="https://www.youtube.com/s/desktop/4365d982/img/logos/favicon_32x32.png" type="image/png">
  <style>
     :root {
         --bg-color: #0d1117;
@@ -152,6 +154,7 @@
         </div>
         
         <div class="progress-container" id="progress-container">
+            <p id="youtube-url"></p>
             <h3 id="video-title">Downloading...</h3>
             <div class="thumbnail-container"> <img style="display:none" id="thumbnail"></div>
             <div class="progress-bar">
@@ -162,6 +165,7 @@
             </div>
             <p id="progress-text">0%</p>
             <p id="file-size"></p>
+          
             <a href="#" class="download-link" id="download-link">Download Video</a>
         </div>
         
@@ -211,6 +215,17 @@
                 
                 // Show progress container
                 progressContainer.style.display = 'block';
+
+                //display the url link on the website under the download button
+                const youtubeUrl = document.getElementById('youtube-url');
+                youtubeUrl.textContent = `${url}`;
+                youtubeUrl.style.display = 'block';
+
+
+                
+                //clear input link
+                videoUrlInput.value = '';
+
                 
                 // Start download
                 fetch('/download', {
