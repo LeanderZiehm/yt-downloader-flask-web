@@ -14,6 +14,19 @@ CORS(app)
 download_tasks = {}
 
 
+@app.route("/")
+def index():
+    """Serve the main page"""
+    return render_template("index.html")
+
+
+@app.route("/history.html")
+def history():
+    """Serve the download history page"""
+
+    return render_template("history.html")
+
+
 def get_download_path():
     """Get the download directory path"""
     download_dir = os.path.join(os.getcwd(), "downloads")
@@ -54,12 +67,6 @@ def save_to_download_history(download_data):
             json.dump(history, f, indent=2)
     except Exception as e:
         print(f"Error saving download history: {e}")
-
-
-@app.route("/")
-def index():
-    """Serve the main page"""
-    return render_template("index.html")
 
 
 def download_video(url, download_id):

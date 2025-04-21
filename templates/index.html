@@ -6,290 +6,26 @@
   <title>YouTube Video Downloader</title>
   <link
     rel="icon"
-    href="static/favicon.ico"
+    href="https://www.youtube.com/s/desktop/4365d982/img/logos/favicon_32x32.png"
     type="image/png"
   />
-  <style>
-    :root {
-      --bg-color: #0d1117;
-      --container-bg: #161b22;
-      --text-color: #c9d1d9;
-      --accent-color: #238636;
-      --error-color: #f85149;
-      --border-color: #30363d;
-      --button-hover: #2ea043;
-      --sidebar-width: 300px;
-      --sidebar-collapsed-width: 60px;
-    }
-    
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-        Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      height: 100vh;
-    }
-
-    .sidebar {
-      width: var(--sidebar-width);
-      background-color: var(--container-bg);
-      border-right: 1px solid var(--border-color);
-      padding: 20px;
-      overflow-y: auto;
-      transition: width 0.3s ease;
-      position: relative;
-    }
-
-    .sidebar.collapsed {
-      width: var(--sidebar-collapsed-width);
-    }
-
-    .sidebar-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .toggle-sidebar {
-      background: transparent;
-      border: none;
-      color: var(--text-color);
-      cursor: pointer;
-      font-size: 20px;
-      padding: 0;
-    }
-
-    .sidebar.collapsed .sidebar-content {
-      display: none;
-    }
-
-    .sidebar.collapsed .sidebar-header h2 {
-      display: none;
-    }
-
-    .main {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-      transition: margin-left 0.3s ease;
-    }
-
-    .container {
-      background-color: var(--container-bg);
-      border-radius: 8px;
-      padding: 20px;
-      border: 1px solid var(--border-color);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-      margin-bottom: 40px;
-    }
-
-    h1, h2 {
-      margin-top: 0;
-    }
-
-    .input-group {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    input[type="text"] {
-      flex: 1;
-      padding: 10px;
-      background-color: #0d1117;
-      border: 1px solid var(--border-color);
-      color: var(--text-color);
-      border-radius: 4px;
-    }
-
-    button {
-      padding: 10px 15px;
-      background-color: var(--accent-color);
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background-color 0.2s;
-    }
-
-    button:hover {
-      background-color: var(--button-hover);
-    }
-
-    .btn-small {
-      padding: 4px 8px;
-      font-size: 0.9em;
-      margin-right: 5px;
-    }
-
-    .history-item {
-      background-color: rgba(255, 255, 255, 0.05);
-      border-radius: 4px;
-      margin-bottom: 15px;
-      overflow: hidden;
-    }
-
-    .history-header {
-      padding: 10px;
-      background-color: rgba(255, 255, 255, 0.1);
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .history-header h3 {
-      margin: 0;
-      font-size: 16px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 180px;
-    }
-
-    .history-details {
-      padding: 15px;
-      display: none;
-    }
-
-    .history-details.active {
-      display: block;
-    }
-
-    .thumbnail-container {
-      width: 100%;
-      margin: 10px 0;
-      text-align: center;
-    }
-
-    .thumbnail-container img {
-      max-width: 100%;
-      border-radius: 4px;
-    }
-
-    .meta-data {
-      font-size: 14px;
-      margin: 5px 0;
-    }
-
-    .action-buttons {
-      display: flex;
-      gap: 10px;
-      margin-top: 15px;
-    }
-
-    .download-link {
-      display: none;
-      margin-top: 10px;
-      padding: 10px;
-      background-color: var(--accent-color);
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-    }
-
-    .progress-container {
-      display: none;
-    }
-
-    .progress-bar {
-      height: 8px;
-      background-color: rgba(255, 255, 255, 0.1);
-      border-radius: 4px;
-      overflow: hidden;
-      margin: 10px 0;
-    }
-
-    .progress {
-      height: 100%;
-      background-color: var(--accent-color);
-      width: 0%;
-      transition: width 0.5s ease;
-    }
-
-    .progess-slider {
-      height: 20px;
-      background-color: rgba(255, 255, 255, 0.03);
-      border-radius: 6px;
-      position: relative;
-      margin: 15px 0;
-    }
-
-    .slider-fill {
-      height: 100%;
-      background-color: rgba(35, 134, 54, 0.2);
-      border-radius: 6px;
-      width: 0%;
-      transition: width 0.5s ease;
-    }
-
-    .error {
-      color: var(--error-color);
-      display: none;
-      margin-top: 15px;
-    }
-
-    /* Tooltip for long titles */
-    .tooltip {
-      position: relative;
-    }
-
-    .tooltip:hover::after {
-      content: attr(data-title);
-      position: absolute;
-      left: 0;
-      top: 100%;
-      background-color: #000;
-      color: #fff;
-      padding: 5px;
-      border-radius: 3px;
-      z-index: 1;
-      white-space: normal;
-      max-width: 250px;
-    }
-
-    /* Loading spinner */
-    .spinner {
-      border: 3px solid rgba(255, 255, 255, 0.1);
-      border-radius: 50%;
-      border-top: 3px solid var(--accent-color);
-      width: 20px;
-      height: 20px;
-      animation: spin 1s linear infinite;
-      margin: 10px auto;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
+  <link rel="stylesheet" href="static/style.css" />
 </head>
 
 <body>
-  <!-- SIDEBAR -->
-  <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <h2>Download History</h2>
-      <button class="toggle-sidebar" id="toggle-sidebar">≡</button>
-    </div>
-    <div class="sidebar-content">
-      <div id="history-items">
-        <!-- History items go here -->
-        <div class="spinner" id="history-spinner"></div>
-      </div>
-    </div>
-  </div>
+  <!-- HEADER NAVIGATION -->
+  <header class="header">
+    <h1>YouTube Video Downloader</h1>
+    <nav class="nav-menu">
+      <a href="index" class="nav-link active">Download</a>
+      <a href="history.html" class="nav-link">History</a>
+    </nav>
+  </header>
 
   <!-- MAIN CONTENT -->
   <div class="main">
     <div class="container">
-      <h1>YouTube Video Downloader</h1>
+      <h2>Download Video</h2>
       <div class="input-group">
         <input type="text" id="video-url" placeholder="Enter YouTube URL..." />
         <button id="download-btn">Download</button>
@@ -330,18 +66,9 @@
       const errorMessage = document.getElementById("error-message");
       const youtubeUrl = document.getElementById("youtube-url");
       const thumbnailImg = document.getElementById("thumbnail");
-      const sidebar = document.getElementById("sidebar");
-      const toggleSidebar = document.getElementById("toggle-sidebar");
-      const historyItems = document.getElementById("history-items");
-      const historySpinner = document.getElementById("history-spinner");
 
       let downloadInterval;
       let currentDownloadId;
-
-      // Sidebar toggle
-      toggleSidebar.addEventListener("click", function() {
-        sidebar.classList.toggle("collapsed");
-      });
 
       // Download button
       downloadBtn.addEventListener("click", startDownload);
@@ -402,7 +129,6 @@
               downloadLink.style.display = "inline-block";
               progressText.textContent = "Download Complete!";
               downloadLink.click();
-              loadHistory(); // refresh history
             } else if (data.status === "error") {
               clearInterval(downloadInterval);
               showError("Error: " + (data.error || "Unknown"));
@@ -431,191 +157,6 @@
         progressContainer.style.display = "none";
       }
 
-      // Format file size
-      function formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-      }
-
-      // Format duration
-      function formatDuration(seconds) {
-        if (!seconds) return 'Unknown';
-        const hrs = Math.floor(seconds / 3600);
-        const mins = Math.floor((seconds % 3600) / 60);
-        const secs = Math.floor(seconds % 60);
-        
-        let result = '';
-        if (hrs > 0) result += `${hrs}h `;
-        if (mins > 0 || hrs > 0) result += `${mins}m `;
-        result += `${secs}s`;
-        
-        return result;
-      }
-
-      // Format date
-      function formatDate(isoString) {
-        const date = new Date(isoString);
-        return date.toLocaleString();
-      }
-
-      // --- HISTORY ---
-      function loadHistory() {
-        historySpinner.style.display = "block";
-        historyItems.innerHTML = '<div class="spinner" id="history-spinner"></div>';
-        
-        fetch("/history")
-          .then((r) => r.json())
-          .then((files) => {
-            historyItems.innerHTML = "";
-            
-            if (files.length === 0) {
-              historyItems.innerHTML = "<p>No downloads yet</p>";
-              return;
-            }
-            
-            files.forEach((item) => {
-              const historyItem = document.createElement("div");
-              historyItem.className = "history-item";
-              
-              // Create header with title
-              const header = document.createElement("div");
-              header.className = "history-header";
-              
-              const title = document.createElement("h3");
-              title.className = "tooltip";
-              title.setAttribute("data-title", item.title || item.filename);
-              title.textContent = item.title || item.filename;
-              
-              const expandIcon = document.createElement("span");
-              expandIcon.textContent = "▼";
-              
-              header.appendChild(title);
-              header.appendChild(expandIcon);
-              
-              // Create details section
-              const details = document.createElement("div");
-              details.className = "history-details";
-              
-              // Add thumbnail if available
-              if (item.thumbnail_url) {
-                const thumbnailContainer = document.createElement("div");
-                thumbnailContainer.className = "thumbnail-container";
-                
-                const thumbnail = document.createElement("img");
-                thumbnail.src = item.thumbnail_url;
-                thumbnail.alt = item.title || "Video thumbnail";
-                
-                thumbnailContainer.appendChild(thumbnail);
-                details.appendChild(thumbnailContainer);
-              }
-              
-              // Add metadata
-              const metaData = document.createElement("div");
-              metaData.className = "meta-data";
-              
-              // File details
-              const fileInfo = document.createElement("p");
-              fileInfo.textContent = `File: ${item.filename}`;
-              metaData.appendChild(fileInfo);
-              
-              // Size
-              if (item.filesize) {
-                const sizeInfo = document.createElement("p");
-                sizeInfo.textContent = `Size: ${formatFileSize(item.filesize)}`;
-                metaData.appendChild(sizeInfo);
-              }
-              
-              // Duration
-              if (item.duration_seconds) {
-                const durationInfo = document.createElement("p");
-                durationInfo.textContent = `Duration: ${formatDuration(item.duration_seconds)}`;
-                metaData.appendChild(durationInfo);
-              }
-              
-              // Download date
-              if (item.end_time) {
-                const dateInfo = document.createElement("p");
-                dateInfo.textContent = `Downloaded: ${formatDate(item.end_time)}`;
-                metaData.appendChild(dateInfo);
-              }
-              
-              // YouTube URL if available
-              if (item.url && item.url.includes("youtube.com")) {
-                const urlInfo = document.createElement("p");
-                const urlLink = document.createElement("a");
-                urlLink.href = item.url;
-                urlLink.target = "_blank";
-                urlLink.textContent = "Watch on YouTube";
-                urlLink.style.color = "#3ea6ff";
-                urlInfo.appendChild(urlLink);
-                metaData.appendChild(urlInfo);
-              }
-              
-              details.appendChild(metaData);
-              
-              // Action buttons
-              const actions = document.createElement("div");
-              actions.className = "action-buttons";
-              
-              const downloadBtn = document.createElement("button");
-              downloadBtn.textContent = "Download";
-              downloadBtn.onclick = () => {
-                window.location.href = `/get_file_by_name/${encodeURIComponent(item.filename)}`;
-              };
-              
-              const deleteBtn = document.createElement("button");
-              deleteBtn.textContent = "Delete";
-              deleteBtn.onclick = () => deleteFile(item.filename);
-              
-              actions.appendChild(downloadBtn);
-              actions.appendChild(deleteBtn);
-              details.appendChild(actions);
-              
-              // Append to history item
-              historyItem.appendChild(header);
-              historyItem.appendChild(details);
-              
-              // Add click handler to toggle details
-              header.addEventListener("click", () => {
-                details.classList.toggle("active");
-                expandIcon.textContent = details.classList.contains("active") ? "▲" : "▼";
-              });
-              
-              historyItems.appendChild(historyItem);
-            });
-            
-            historySpinner.style.display = "none";
-          })
-          .catch((e) => {
-            console.error("History load error:", e);
-            historyItems.innerHTML = "<p>Error loading history</p>";
-            historySpinner.style.display = "none";
-          });
-      }
-
-      function deleteFile(filename) {
-        if (!confirm(`Are you sure you want to delete "${filename}" permanently?`))
-          return;
-          
-        fetch("/delete_file", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ filename }),
-        })
-          .then((r) => r.json())
-          .then((resp) => {
-            if (resp.error) {
-              alert("Delete failed: " + resp.error);
-            } else {
-              loadHistory();
-            }
-          })
-          .catch((e) => alert("Error deleting file: " + e.message));
-      }
-
       // Handle Enter key in the URL input
       videoUrlInput.addEventListener("keypress", function(event) {
         if (event.key === "Enter") {
@@ -623,9 +164,6 @@
           startDownload();
         }
       });
-
-      // initial load
-      loadHistory();
     });
   </script>
 </body>

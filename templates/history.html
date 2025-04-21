@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Download History - YouTube Video Downloader</title>
+  <link rel="icon" href="https://www.youtube.com/s/desktop/4365d982/img/logos/favicon_32x32.png" type="image/png" />
+  <link rel="stylesheet" href="static/style.css">
+  <style>
+
+    .header {
+      padding: 1em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-menu a {
+      color: 00000044;
+      text-decoration: none;
+      margin-left: 1em;
+    }
+    .nav-menu .active {
+      font-weight: bold;
+    }
+    .main {
+      padding: 2em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: 00000044;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #555555;
+      text-align: left;
+      border-radius: 10px;
+    }
+    th {
+      cursor: pointer;
+      background: #00000044;
+    }
+    th.sort-asc::after {
+      content: ' 🔼';
+    }
+    th.sort-desc::after {
+      content: ' 🔽';
+    }
+    input[type="text"] {
+      margin-bottom: 1em;
+      padding: 0.5em;
+      width: 300px;
+    }
+    .spinner {
+      text-align: center;
+      padding: 20px;
+    }
+    button {
+      margin-right: 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>YouTube Video Downloader</h1>
+    <nav class="nav-menu">
+      <a href="/" class="nav-link">Download</a>
+      <a href="/history.html" class="nav-link active">History</a>
+    </nav>
+  </header>
+
+  <div class="main">
+    <h2>Download History</h2>
+    <input type="text" id="searchInput" placeholder="Search by filename..." />
+    <div id="history-items">
+      <div class="spinner" id="history-spinner">Loading...</div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const historyContainer = document.getElementById("history-items");
+      const spinner = document.getElementById("history-spinner");
+      const searchInput = document.getElementById("searchInput");
+
+      let tableData = [];
+      let currentSort = { key: null, direction: 1 };
+
+      function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      }
+
+      function formatDuration(seconds) {
+        if (!seconds) return 'Unknown';
+        const hrs = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${hrs > 0 ? hrs + 'h ' : ''}${mins}m ${secs}s`;
+      }
+
+      function formatDate(isoString) {
+        const date = new Date(isoString);
+        return date.toLocaleString();
+      }
+
+      function renderTable(data) {
+        const filtered = data.filter(item =>
+          item.filename.toLowerCase().includes(searchInput.value.toLowerCase())
+        );
+
+        const table = document.createElement("table");
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+        const columns = [
+          { label: "Filename", key: "filename" },
+          { label: "Size", key: "filesize" },
+          { label: "Duration", key: "duration_seconds" },
+          { label: "Date", key: "end_time" },
+          { label: "Actions", key: null },
+        ];
+
+        columns.forEach(col => {
+          const th = document.createElement("th");
+          th.textContent = col.label;
+
+          if (col.key) {
+            th.addEventListener("click", () => {
+              if (currentSort.key === col.key) {
+                currentSort.direction *= -1;
+              } else {
+                currentSort.key = col.key;
+                currentSort.direction = 1;
+              }
+              data.sort((a, b) => {
+                const valA = a[col.key] || 0;
+                const valB = b[col.key] || 0;
+                return (valA > valB ? 1 : -1) * currentSort.direction;
+              });
+              renderTable(data);
+            });
+
+            // Fix the class assignment - only add a class if there is a current sort
+            if (currentSort.key === col.key) {
+              th.classList.add(currentSort.direction > 0 ? "sort-asc" : "sort-desc");
+            }
+          }
+
+          headerRow.appendChild(th);
+        });
+
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement("tbody");
+        filtered.forEach(item => {
+          const tr = document.createElement("tr");
+
+          const tdFilename = document.createElement("td");
+          tdFilename.textContent = item.title || item.filename;
+          tr.appendChild(tdFilename);
+
+          const tdSize = document.createElement("td");
+          tdSize.textContent = item.filesize ? formatFileSize(item.filesize) : "N/A";
+          tr.appendChild(tdSize);
+
+          const tdDuration = document.createElement("td");
+          tdDuration.textContent = item.duration_seconds ? formatDuration(item.duration_seconds) : "Unknown";
+          tr.appendChild(tdDuration);
+
+          const tdDate = document.createElement("td");
+          tdDate.textContent = item.end_time ? formatDate(item.end_time) : "N/A";
+          tr.appendChild(tdDate);
+
+          const tdActions = document.createElement("td");
+          const downloadBtn = document.createElement("button");
+          downloadBtn.textContent = "Download";
+          downloadBtn.onclick = () => {
+            window.location.href = `/get_file_by_name/${encodeURIComponent(item.filename)}`;
+          };
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.textContent = "Delete";
+          deleteBtn.onclick = () => deleteFile(item.filename);
+
+          tdActions.appendChild(downloadBtn);
+          tdActions.appendChild(document.createTextNode(" ")); // Add space between buttons
+          tdActions.appendChild(deleteBtn);
+          tr.appendChild(tdActions);
+
+          tbody.appendChild(tr);
+        });
+
+        table.appendChild(tbody);
+        historyContainer.innerHTML = "";
+        historyContainer.appendChild(table);
+      }
+
+      function deleteFile(filename) {
+        if (!confirm(`Delete "${filename}"?`)) return;
+
+        fetch("/delete_file", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename }),
+        })
+          .then(res => res.json())
+          .then(resp => {
+            if (resp.error) {
+              alert("Delete failed: " + resp.error);
+            } else {
+              loadHistory();
+            }
+          })
+          .catch(e => alert("Error deleting file: " + e.message));
+      }
+
+      function loadHistory() {
+        spinner.style.display = "block";
+        fetch("/history")
+          .then(res => res.json())
+          .then(data => {
+            tableData = Array.isArray(data) ? data : [];
+            renderTable(tableData);
+            spinner.style.display = "none";
+          })
+          .catch(err => {
+            console.error("Fetch error:", err);
+            historyContainer.innerHTML = "<p>Error loading history: " + err.message + "</p>";
+            spinner.style.display = "none";
+          });
+      }
+
+      searchInput.addEventListener("input", () => renderTable(tableData));
+      loadHistory();
+    });
+  </script>
+</body>
+</html>
