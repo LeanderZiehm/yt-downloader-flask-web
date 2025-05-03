@@ -9,33 +9,55 @@
     href="https://www.youtube.com/s/desktop/4365d982/img/logos/favicon_32x32.png"
     type="image/png"
   />
-  <link rel="stylesheet" href="static/style.css" />
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Custom theme configuration -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            dark: {
+              bg: "var(--bg-color)",
+              container: "var(--container-bg)",
+              text: "var(--text-color)",
+              accent: "var(--accent-color)",
+              error: "var(--error-color)",
+              border: "var(--border-color)",
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 
-<body>
+<body class="bg-dark-bg text-dark-text min-h-screen flex flex-col">
   <!-- HEADER NAVIGATION -->
-  <header class="header">
-    <h1>YouTube Video Downloader</h1>
-    <nav class="nav-menu">
-      <a href="index" class="nav-link active">Download</a>
-      <a href="history.html" class="nav-link">History</a>
+  <header class="bg-dark-container border-b border-dark-border px-5 py-4 flex justify-between items-center">
+    <h1 class="text-2xl font-bold m-0">YouTube Video Downloader</h1>
+    <nav class="flex gap-4">
+      <a href="{{ url_for('index') }}" class="px-3 py-2 rounded transition-colors bg-dark-accent text-white">Download</a>
+      <a href="{{ url_for('history') }}" class="px-3 py-2 rounded transition-colors hover:bg-white hover:bg-opacity-10 text-dark-text">History</a>
     </nav>
   </header>
 
   <!-- MAIN CONTENT -->
-  <div class="main">
-    <div class="container">
-      <h2>Download Video</h2>
-      <div class="input-group">
-        <input type="text" id="video-url" placeholder="Enter YouTube URL..." />
-        <button id="download-btn">Download</button>
+  <div class="flex-1 p-5 overflow-y-auto">
+    <div class="bg-dark-container rounded-lg p-5 border border-dark-border shadow-custom mb-10 max-w-3xl mx-auto">
+      <h2 class="text-xl font-bold mb-4">Download Video</h2>
+      <div class="flex gap-3 mb-5">
+        <input type="text" id="video-url" placeholder="Enter YouTube URL..." class="flex-1 p-2 bg-dark-bg border border-dark-border text-dark-text rounded" />
+        <button id="download-btn" class="btn">Download</button>
       </div>
 
-      <div class="progress-container" id="progress-container">
-        <p id="youtube-url"></p>
-        <h3 id="video-title">Downloading...</h3>
-        <div class="thumbnail-container">
-          <img id="thumbnail" />
+      <div class="hidden" id="progress-container">
+        <p id="youtube-url" class="text-sm text-gray-400 mb-1"></p>
+        <h3 id="video-title" class="font-medium text-lg mb-2">Downloading...</h3>
+        <div class="w-full my-3 text-center">
+          <img id="thumbnail" class="max-w-full rounded hidden mx-auto" />
         </div>
         <div class="progress-bar">
           <div class="progress" id="progress-bar"></div>
@@ -43,12 +65,14 @@
         <div class="progess-slider">
           <div class="slider-fill"></div>
         </div>
-        <p id="progress-text">0%</p>
-        <p id="file-size"></p>
-        <a href="#" class="download-link" id="download-link">Download Video</a>
+        <p id="progress-text" class="text-center my-2">0%</p>
+        <p id="file-size" class="text-sm text-center mb-3"></p>
+        <div class="text-center">
+          <a href="#" class="download-link" id="download-link">Download Video</a>
+        </div>
       </div>
 
-      <div class="error" id="error-message"></div>
+      <div class="text-dark-error hidden" id="error-message"></div>
     </div>
   </div>
 
@@ -78,7 +102,8 @@
         if (!url) return showError("Please enter a YouTube URL");
 
         resetUI();
-        progressContainer.style.display = "block";
+        progressContainer.classList.remove("hidden");
+        progressContainer.classList.add("block");
         youtubeUrl.textContent = url;
         youtubeUrl.style.display = "block";
         videoUrlInput.value = "";
@@ -107,15 +132,13 @@
             }
             // progress bar + slider
             progressBar.style.width = data.percentage + "%";
-            document
-              .querySelector(".slider-fill")
-              .style.setProperty("width", data.percentage + "%");
+            document.querySelector(".slider-fill").style.width = data.percentage + "%";
             progressText.textContent = data.percentage + "% Complete";
 
             if (data.title) videoTitle.textContent = data.title;
             if (data.thumbnail_url) {
               thumbnailImg.src = data.thumbnail_url;
-              thumbnailImg.style.display = "block";
+              thumbnailImg.classList.remove("hidden");
             }
             if (data.total_size) {
               const tot = (data.total_size / 1024 / 1024).toFixed(2);
@@ -147,14 +170,14 @@
         videoTitle.textContent = "Downloading...";
         fileSize.textContent = "";
         downloadLink.style.display = "none";
-        errorMessage.style.display = "none";
-        thumbnailImg.style.display = "none";
+        errorMessage.classList.add("hidden");
+        thumbnailImg.classList.add("hidden");
       }
 
       function showError(msg) {
         errorMessage.textContent = msg;
-        errorMessage.style.display = "block";
-        progressContainer.style.display = "none";
+        errorMessage.classList.remove("hidden");
+        progressContainer.classList.add("hidden");
       }
 
       // Handle Enter key in the URL input

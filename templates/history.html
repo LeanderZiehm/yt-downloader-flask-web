@@ -5,77 +5,47 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Download History - YouTube Video Downloader</title>
   <link rel="icon" href="https://www.youtube.com/s/desktop/4365d982/img/logos/favicon_32x32.png" type="image/png" />
-  <link rel="stylesheet" href="static/style.css">
-  <style>
-
-    .header {
-      padding: 1em;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Custom theme configuration -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            dark: {
+              bg: "var(--bg-color)",
+              container: "var(--container-bg)",
+              text: "var(--text-color)",
+              accent: "var(--accent-color)",
+              error: "var(--error-color)",
+              border: "var(--border-color)",
+            }
+          }
+        }
+      }
     }
-    .nav-menu a {
-      color: 00000044;
-      text-decoration: none;
-      margin-left: 1em;
-    }
-    .nav-menu .active {
-      font-weight: bold;
-    }
-    .main {
-      padding: 2em;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: 00000044;
-    }
-    th, td {
-      padding: 10px;
-      border: 1px solid #555555;
-      text-align: left;
-      border-radius: 10px;
-    }
-    th {
-      cursor: pointer;
-      background: #00000044;
-    }
-    th.sort-asc::after {
-      content: ' 🔼';
-    }
-    th.sort-desc::after {
-      content: ' 🔽';
-    }
-    input[type="text"] {
-      margin-bottom: 1em;
-      padding: 0.5em;
-      width: 300px;
-    }
-    .spinner {
-      text-align: center;
-      padding: 20px;
-    }
-    button {
-      margin-right: 5px;
-      padding: 5px 10px;
-      cursor: pointer;
-    }
-  </style>
+  </script>
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-  <header class="header">
-    <h1>YouTube Video Downloader</h1>
-    <nav class="nav-menu">
-      <a href="/" class="nav-link">Download</a>
-      <a href="/history.html" class="nav-link active">History</a>
+<body class="bg-dark-bg text-dark-text min-h-screen flex flex-col">
+  <header class="bg-dark-container border-b border-dark-border px-5 py-4 flex justify-between items-center">
+    <h1 class="text-2xl font-bold m-0">YouTube Video Downloader</h1>
+    <nav class="flex gap-4">
+      <a href="{{ url_for('index') }}" class="px-3 py-2 rounded transition-colors hover:bg-white hover:bg-opacity-10 text-dark-text">Download</a>
+      <a href="{{ url_for('history') }}" class="px-3 py-2 rounded transition-colors bg-dark-accent text-white">History</a>
     </nav>
   </header>
 
-  <div class="main">
-    <h2>Download History</h2>
-    <input type="text" id="searchInput" placeholder="Search by filename..." />
-    <div id="history-items">
-      <div class="spinner" id="history-spinner">Loading...</div>
+  <div class="flex-1 p-5 md:p-8 overflow-y-auto max-w-6xl mx-auto">
+    <h2 class="text-xl font-bold mb-4">Download History</h2>
+    <input type="text" id="searchInput" placeholder="Search by filename..." class="w-full max-w-md mb-4 px-3 py-2 bg-dark-bg border border-dark-border text-dark-text rounded" />
+    <div id="history-items" class="bg-dark-container rounded-lg p-4 border border-dark-border shadow-custom">
+      <div class="text-center py-5" id="history-spinner">
+        <div class="spinner mx-auto"></div>
+        <p class="mt-2">Loading...</p>
+      </div>
     </div>
   </div>
 
@@ -114,9 +84,22 @@
           item.filename.toLowerCase().includes(searchInput.value.toLowerCase())
         );
 
+        // Create responsive table/card view
+        if (filtered.length === 0) {
+          historyContainer.innerHTML = "<p class='text-center py-4'>No results found</p>";
+          return;
+        }
+
+        const tableDiv = document.createElement("div");
+        tableDiv.className = "overflow-x-auto hidden md:block";
+        
         const table = document.createElement("table");
+        table.className = "w-full border-collapse";
+        
         const thead = document.createElement("thead");
         const headerRow = document.createElement("tr");
+        headerRow.className = "bg-opacity-20 bg-white";
+        
         const columns = [
           { label: "Filename", key: "filename" },
           { label: "Size", key: "filesize" },
@@ -127,6 +110,7 @@
 
         columns.forEach(col => {
           const th = document.createElement("th");
+          th.className = "text-left p-3 border-b border-dark-border cursor-pointer";
           th.textContent = col.label;
 
           if (col.key) {
@@ -145,9 +129,8 @@
               renderTable(data);
             });
 
-            // Fix the class assignment - only add a class if there is a current sort
             if (currentSort.key === col.key) {
-              th.classList.add(currentSort.direction > 0 ? "sort-asc" : "sort-desc");
+              th.textContent += currentSort.direction > 0 ? " 🔼" : " 🔽";
             }
           }
 
@@ -160,45 +143,105 @@
         const tbody = document.createElement("tbody");
         filtered.forEach(item => {
           const tr = document.createElement("tr");
+          tr.className = "hover:bg-white hover:bg-opacity-5 transition-colors";
 
           const tdFilename = document.createElement("td");
+          tdFilename.className = "p-3 border-b border-dark-border";
           tdFilename.textContent = item.title || item.filename;
           tr.appendChild(tdFilename);
 
           const tdSize = document.createElement("td");
+          tdSize.className = "p-3 border-b border-dark-border";
           tdSize.textContent = item.filesize ? formatFileSize(item.filesize) : "N/A";
           tr.appendChild(tdSize);
 
           const tdDuration = document.createElement("td");
+          tdDuration.className = "p-3 border-b border-dark-border";
           tdDuration.textContent = item.duration_seconds ? formatDuration(item.duration_seconds) : "Unknown";
           tr.appendChild(tdDuration);
 
           const tdDate = document.createElement("td");
+          tdDate.className = "p-3 border-b border-dark-border";
           tdDate.textContent = item.end_time ? formatDate(item.end_time) : "N/A";
           tr.appendChild(tdDate);
 
           const tdActions = document.createElement("td");
+          tdActions.className = "p-3 border-b border-dark-border";
+          
+          const buttonContainer = document.createElement("div");
+          buttonContainer.className = "flex gap-2";
+          
           const downloadBtn = document.createElement("button");
+          downloadBtn.className = "btn btn-small";
           downloadBtn.textContent = "Download";
           downloadBtn.onclick = () => {
             window.location.href = `/get_file_by_name/${encodeURIComponent(item.filename)}`;
           };
 
           const deleteBtn = document.createElement("button");
+          deleteBtn.className = "btn btn-small bg-dark-error hover:bg-opacity-80";
           deleteBtn.textContent = "Delete";
           deleteBtn.onclick = () => deleteFile(item.filename);
 
-          tdActions.appendChild(downloadBtn);
-          tdActions.appendChild(document.createTextNode(" ")); // Add space between buttons
-          tdActions.appendChild(deleteBtn);
+          buttonContainer.appendChild(downloadBtn);
+          buttonContainer.appendChild(deleteBtn);
+          tdActions.appendChild(buttonContainer);
           tr.appendChild(tdActions);
 
           tbody.appendChild(tr);
         });
 
         table.appendChild(tbody);
+        tableDiv.appendChild(table);
+        
         historyContainer.innerHTML = "";
-        historyContainer.appendChild(table);
+        historyContainer.appendChild(tableDiv);
+        
+        // Add responsive card view for mobile
+        const mobileView = document.createElement("div");
+        mobileView.className = "md:hidden space-y-4";
+        
+        filtered.forEach(item => {
+          const card = document.createElement("div");
+          card.className = "bg-dark-bg rounded border border-dark-border p-3";
+          
+          const title = document.createElement("h3");
+          title.className = "font-medium text-lg";
+          title.textContent = item.title || item.filename;
+          card.appendChild(title);
+          
+          const details = document.createElement("div");
+          details.className = "text-sm opacity-80 mt-1";
+          details.innerHTML = `
+            <div class="mb-1">Size: ${item.filesize ? formatFileSize(item.filesize) : "N/A"}</div>
+            <div class="mb-1">Duration: ${item.duration_seconds ? formatDuration(item.duration_seconds) : "Unknown"}</div>
+            <div class="mb-2">Date: ${item.end_time ? formatDate(item.end_time) : "N/A"}</div>
+          `;
+          card.appendChild(details);
+          
+          const actions = document.createElement("div");
+          actions.className = "flex gap-2 mt-2";
+          
+          const downloadBtn = document.createElement("button");
+          downloadBtn.className = "btn btn-small";
+          downloadBtn.textContent = "Download";
+          downloadBtn.onclick = () => {
+            window.location.href = `/get_file_by_name/${encodeURIComponent(item.filename)}`;
+          };
+          
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "btn btn-small bg-dark-error hover:bg-opacity-80";
+          deleteBtn.textContent = "Delete";
+          deleteBtn.onclick = () => deleteFile(item.filename);
+          
+          actions.appendChild(downloadBtn);
+          actions.appendChild(deleteBtn);
+          card.appendChild(actions);
+          
+          mobileView.appendChild(card);
+        });
+        
+        historyContainer.appendChild(mobileView);
       }
 
       function deleteFile(filename) {
@@ -231,7 +274,7 @@
           })
           .catch(err => {
             console.error("Fetch error:", err);
-            historyContainer.innerHTML = "<p>Error loading history: " + err.message + "</p>";
+            historyContainer.innerHTML = "<p class='text-center py-4 text-dark-error'>Error loading history: " + err.message + "</p>";
             spinner.style.display = "none";
           });
       }
