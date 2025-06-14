@@ -25,3 +25,11 @@ Just copy the url of a youtube video you want to download then hit the download 
 # Preview
 
 ![preview](docs/preview.png)
+
+
+
+# todo 
+
+add dowload playlist support 
+add link list download in parallel
+add progress for bulk downloading
